@@ -110,7 +110,7 @@ func main() {
 	stocks := []string{"MSFT", "TSLA", "AAPL"}
 
 	for _, stock := range stocks {
-		stockPublisher(rabbitMQConnectionURL, "Stock Publisher", stock)
+		go stockPublisher(rabbitMQConnectionURL, "Stock Publisher", stock)
 	}
 
 	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
