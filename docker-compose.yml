@@ -1,4 +1,3 @@
-version: "3.1"
 services:
   # Create the RabbitMQ service
   message-broker:
@@ -8,8 +7,8 @@ services:
       - "5672:5672"
       - "15672:15672"
     volumes:
-      - ${HOME}/rabbitmq:/var/lib/rabbitmq
-      - ${HOME}/rabbitmq:/var/log/rabbitmq
+      - ./rabbitmq:/var/lib/rabbitmq
+      - ./rabbitmq:/var/log/rabbitmq
     restart: always
     networks:
       - stock-network
@@ -43,60 +42,22 @@ services:
     restart: always
     depends_on:
       - message-broker
-      - mongodb_aapl
-      - mongodb_msft
-      - mongodb_tsla
+      - mongodb
     networks:
       - stock-network
 
-  # Create the MongoDB service for aapl
-  mongodb_aapl:
+  # Create the MongoDB service
+  mongodb:
     image: mongo:latest
     ports:
       - "27017:27017"
-    container_name: mongodb_aapl
+    container_name: MongoDB
+    # deploy:
+    #   mode: replicated
+    #   replicas: 3
     restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
-    depends_on:
-      - consumer
     volumes:
-      - ${HOME}/mongodb_aapl:/data/db
-    networks:
-      - stock-network
-
-  # Create the MongoDB service for msft
-  mongodb_msft:
-    image: mongo:latest
-    ports:
-      - "27018:27017"
-    container_name: mongodb_msft
-    restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
-    depends_on:
-      - consumer
-    volumes:
-      - ${HOME}/mongodb_msft:/data/db
-    networks:
-      - stock-network
-
-  # Create the MongoDB service for tsla
-  mongodb_tsla:
-    image: mongo:latest
-    ports:
-      - "27019:27017"
-    container_name: mongodb_tsla
-    restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
-    depends_on:
-      - consumer
-    volumes:
-      - ${HOME}/mongodb_tsla:/data/db
+      - ./mongodb:/data/db
     networks:
       - stock-network
 
