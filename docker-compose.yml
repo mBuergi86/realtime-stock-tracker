@@ -39,7 +39,7 @@ services:
     container_name: rmq-consumer
     ports:
       - "5051:5051"
-    build: ./stock-consumer
+    build: ./consumer
     restart: always
     depends_on:
       - message-broker
