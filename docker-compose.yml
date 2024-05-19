@@ -22,7 +22,7 @@ services:
       timeout: 15s
       retries: 5
 
-  # Create the Golang service
+  # Create the Golang service for Producer
   producer:
     container_name: rmq-producer
     ports:
@@ -31,6 +31,72 @@ services:
     restart: always
     depends_on:
       - message-broker
+    networks:
+      - stock-network
+
+  # Create the Golang service for Consumer
+  consumer:
+    container_name: rmq-consumer
+    ports:
+      - "5051:5051"
+    build: ./stock-consumer
+    restart: always
+    depends_on:
+      - message-broker
+      - mongodb_aapl
+      - mongodb_msft
+      - mongodb_tsla
+    networks:
+      - stock-network
+
+  # Create the MongoDB service for aapl
+  mongodb_aapl:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    container_name: mongodb_aapl
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    depends_on:
+      - consumer
+    volumes:
+      - ${HOME}/mongodb_aapl:/data/db
+    networks:
+      - stock-network
+
+  # Create the MongoDB service for msft
+  mongodb_msft:
+    image: mongo:latest
+    ports:
+      - "27018:27017"
+    container_name: mongodb_msft
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    depends_on:
+      - consumer
+    volumes:
+      - ${HOME}/mongodb_msft:/data/db
+    networks:
+      - stock-network
+
+  # Create the MongoDB service for tsla
+  mongodb_tsla:
+    image: mongo:latest
+    ports:
+      - "27019:27017"
+    container_name: mongodb_tsla
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    depends_on:
+      - consumer
+    volumes:
+      - ${HOME}/mongodb_tsla:/data/db
     networks:
       - stock-network
 
