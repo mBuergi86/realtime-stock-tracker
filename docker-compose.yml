@@ -1,0 +1,39 @@
+version: "3.1"
+services:
+  # Create the RabbitMQ service
+  message-broker:
+    image: rabbitmq:3-management-alpine
+    container_name: message-broker
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ${HOME}/rabbitmq:/var/lib/rabbitmq
+      - ${HOME}/rabbitmq:/var/log/rabbitmq
+    restart: always
+    networks:
+      - stock-network
+    environment:
+      - RABBITMQ_DEFAULT_USER=stockmarket
+      - RABBITMQ_DEFAULT_PASS=supersecret123
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 5s
+      timeout: 15s
+      retries: 5
+
+  # Create the Golang service
+  producer:
+    container_name: rmq-producer
+    ports:
+      - "5050:5050"
+    build: ./stock-publisher
+    restart: always
+    depends_on:
+      - message-broker
+    networks:
+      - stock-network
+
+networks:
+  stock-network:
+    driver: bridge
