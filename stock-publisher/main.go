@@ -105,7 +105,7 @@ func getEnvWithDefault(key, defaultValue string) string {
 }
 
 func main() {
-	rabbitMQConnectionURL := getEnvWithDefault("RABBITMQ_CONNECTION_URL", "amqp://stockmarket:supersecret123@rabbitmq:5672/")
+	rabbitMQConnectionURL := getEnvWithDefault("RABBITMQ_CONNECTION_URL", "amqp://stockmarket:supersecret123@localhost:5672/")
 
 	stocks := []string{"MSFT", "TSLA", "AAPL"}
 
