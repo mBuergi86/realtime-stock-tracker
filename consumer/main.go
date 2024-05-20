@@ -110,7 +110,7 @@ func RoundToTwoDigits(num float64) float64 {
 
 func main() {
 	rabbitMQConnectionURL := getEnvWithDefault("RABBITMQ_CONNECTION_URL", "amqp://stockmarket:supersecret123@127.0.0.1:5672/")
-	mongoURI := getEnvWithDefault("MONGO_URI", "mongodb://127.0.0.1:27017")
+	mongoURI := getEnvWithDefault("MONGO_URI", "mongodb://mongodb:27017")
 	queueName := "Stock Market" // This should match the producer's queue name
 
 	wc := writeconcern.New(writeconcern.W(1))
