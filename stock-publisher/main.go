@@ -42,7 +42,7 @@ func stockPublisher(url, queueName, stock string) {
 	defer channel.Close()
 
 	_, err = channel.QueueDeclare(
-		queueName,
+		"Stock Market",
 		false,
 		false,
 		false,
@@ -57,10 +57,10 @@ func stockPublisher(url, queueName, stock string) {
 	defer cancel()
 
 	eventTypes := []string{"buy", "sell"}
-	src := rand.NewSource(time.Now().UnixNano())
+	src := rand.NewSource(time.Now().UnixNano() + int64(stock[0]) + int64(os.Getpid()))
 	localRand := rand.New(src)
 
-	tickerIntervaleValue := getEnvWithDefault("TICKER_INTERVAL", "1000")
+	tickerIntervaleValue := getEnvWithDefault("TICKER_INTERVAL", "1")
 	tickerInterval, err := strconv.Atoi(tickerIntervaleValue)
 	failOnError(err, "Failed to parse ticker interval")
 
@@ -105,12 +105,12 @@ func getEnvWithDefault(key, defaultValue string) string {
 }
 
 func main() {
-	rabbitMQConnectionURL := getEnvWithDefault("RABBITMQ_CONNECTION_URL", "amqp://stockmarket:supersecret123@localhost:5672/")
+	rabbitMQConnectionURL := getEnvWithDefault("RABBITMQ_CONNECTION_URL", "amqp://stockmarket:supersecret123@127.0.0.1:5672/")
 
 	stocks := []string{"MSFT", "TSLA", "AAPL"}
 
 	for _, stock := range stocks {
-		go stockPublisher(rabbitMQConnectionURL, "Stock Publisher", stock)
+		go stockPublisher(rabbitMQConnectionURL, "Stock Market", stock)
 	}
 
 	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
