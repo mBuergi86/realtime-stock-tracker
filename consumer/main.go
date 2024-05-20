@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/writeconcern"
 )
 
 func failOnError(err error, msg string) {
@@ -19,21 +20,15 @@ func failOnError(err error, msg string) {
 	}
 }
 
-func getEnvWithDefault(key, defaultValue string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		return defaultValue
-	}
-	return value
+type StockEvent struct {
+	Company   string  `json:"company"`
+	EventType string  `json:"eventType"`
+	Price     float64 `json:"price"`
 }
 
-func RoundToTwoDigits(num float64) float64 {
-	return math.Round(num*100) / 100
-}
+func StockConsumer(url, queueName string, mongoClient *mongo.Client) {
 
-func main() {
-	rabbitMQConnectionURL := getEnvWithDefault("RABBITMQ_CONNECTION_URL", "amqp://stockmarket:supersecret123@localhost:5672/")
-	conn, err := amqp.Dial(rabbitMQConnectionURL)
+	conn, err := amqp.Dial(url)
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
@@ -42,12 +37,12 @@ func main() {
 	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
-		"Stock Publisher", // name
-		false,             // durable
-		false,             // delete when unused
-		false,             // exclusive
-		false,             // no-wait
-		nil,               // arguments
+		queueName, // name
+		false,     // durable
+		false,     // delete when unused
+		false,     // exclusive
+		false,     // no-wait
+		nil,       // arguments
 	)
 	failOnError(err, "Failed to declare a queue")
 
@@ -65,34 +60,29 @@ func main() {
 	var forever chan struct{}
 
 	go func() {
+
 		for d := range msgs {
 			log.Printf("Received a message: %s", d.Body)
-
-			var stock map[string]interface{}
-
-			err := json.Unmarshal(d.Body, &stock)
+			var event StockEvent
+			err := json.Unmarshal(d.Body, &event)
 			if err != nil {
-				failOnError(err, "Failed to parse JSON")
+				log.Printf("Error unmarshalling JSON: %v", err)
 				continue
 			}
 
-			companyName := stock["company"].(string)
-			price := RoundToTwoDigits(stock["price"].(float64))
+			companyName := event.Company
+			price := RoundToTwoDigits(event.Price)
 
-			mongo_uri := getEnvWithDefault("MONGO_URI", "mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0")
-			credential := options.Credential{
-				Username: getEnvWithDefault("MONGO_USER", "stockmarket"),
-				Password: getEnvWithDefault("MONGO_PASSWORD", "supersecret123"),
+			// Process the event
+			if event.EventType == "buy" {
+				log.Printf("Processing buy event: %v", event)
+			} else if event.EventType == "sell" {
+				log.Printf("Processing sell event: %v", event)
+			} else {
+				log.Printf("Unknown event type: %s", event.EventType)
 			}
 
-			client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongo_uri).SetAuth(credential))
-
-			if err != nil {
-				failOnError(err, "Failed to connect to MongoDB")
-				continue
-			}
-
-			_, err = client.Database("stockmarket").Collection("stocks").InsertOne(context.Background(), bson.M{
+			_, err = mongoClient.Database("stockmarket").Collection("stocks").InsertOne(context.Background(), bson.M{
 				"company":  companyName,
 				"avgPrice": price,
 			})
@@ -103,7 +93,40 @@ func main() {
 			}
 		}
 	}()
+	<-forever
+}
+
+func getEnvWithDefault(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
+}
+
+func RoundToTwoDigits(num float64) float64 {
+	return math.Round(num*100) / 100
+}
+
+func main() {
+	rabbitMQConnectionURL := getEnvWithDefault("RABBITMQ_CONNECTION_URL", "amqp://stockmarket:supersecret123@127.0.0.1:5672/")
+	mongoURI := getEnvWithDefault("MONGO_URI", "mongodb://127.0.0.1:27017")
+	queueName := "Stock Market" // This should match the producer's queue name
+
+	wc := writeconcern.New(writeconcern.W(1))
+
+	clientOptions := options.Client().ApplyURI(mongoURI).SetWriteConcern(wc)
+	mongoClient, err := mongo.Connect(context.TODO(), clientOptions)
+	failOnError(err, "Failed to connect to MongoDB")
+
+	defer func() {
+		if err = mongoClient.Disconnect(context.TODO()); err != nil {
+			failOnError(err, "Failed to disconnect from MongoDB")
+		}
+	}()
+
+	go StockConsumer(rabbitMQConnectionURL, queueName, mongoClient)
 
 	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
-	<-forever
+	select {}
 }
