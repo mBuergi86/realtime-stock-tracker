@@ -1,27 +1,38 @@
-# Use the official Golang image as the build stage
-FROM golang:alpine as builder
+# First stage: Build the Go binary
+FROM golang:1.22.3-alpine AS builder
 
-# Set environment variables for the build
-ENV APP_NAME="rmq-consumer" CGO_ENABLED=0 GOOS=linux GOARCH=amd64
+# Set environment variables
+ENV GO111MODULE=on
 
 # Set the working directory inside the container
-WORKDIR /build
+WORKDIR /app
 
-# Copy all files from the current directory to the working directory in the container
-COPY . .
+# Copy go.mod and go.sum files
+COPY go.mod go.sum ./
 
-# Download Go module dependencies
+# Download dependencies
 RUN go mod download
 
-# Build the Go application with optimization flags
-# -ldflags="-s -w": strip debug information to reduce binary size
-RUN go build -ldflags="-s -w" -o ${APP_NAME} ./main.go
+# Copy the rest of the application code
+COPY . .
 
-# Use a minimal base image for the final stage
-FROM scratch
+# Build the Go application
+RUN go build -o consumer main.go
 
-# Copy the built binary from the builder stage to the final image
-COPY --from=builder /build/${APP_NAME} /${APP_NAME}
+# Second stage: Create a minimal image for running the Go binary
+FROM alpine:latest
 
-# Set the entry point to the built binary
-ENTRYPOINT ["/rmq-consumer"]
+# Set the working directory inside the container
+WORKDIR /root/
+
+# Copy the compiled Go binary from the builder stage
+COPY --from=builder /app/consumer .
+
+# Set environment variables
+ENV RABBITMQ_CONNECTION_URL=amqp://stockmarket:supersecret123@rabbitmq:5672/
+ENV MONGODB_URI=mongodb://admin:password@mongodb:27017/
+ENV MONGODB_DATABASE=stockmarket
+ENV MONGODB_COLLECTION=stocks
+
+# Command to run the binary
+CMD ["./consumer"]
