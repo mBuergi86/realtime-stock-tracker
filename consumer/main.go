@@ -79,9 +79,13 @@ func main() {
 			companyName := stock["company"].(string)
 			price := RoundToTwoDigits(stock["price"].(float64))
 
-			mongo_uri := getEnvWithDefault("MONGO_URI", "mongodb://localhost:27017")
+			mongo_uri := getEnvWithDefault("MONGO_URI", "mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0")
+			credential := options.Credential{
+				Username: getEnvWithDefault("MONGO_USER", "stockmarket"),
+				Password: getEnvWithDefault("MONGO_PASSWORD", "supersecret123"),
+			}
 
-			client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongo_uri))
+			client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongo_uri).SetAuth(credential))
 
 			if err != nil {
 				failOnError(err, "Failed to connect to MongoDB")
