@@ -7,8 +7,8 @@ services:
       - "5672:5672"
       - "15672:15672"
     volumes:
-      - ./rabbitmq:/var/lib/rabbitmq
-      - ./rabbitmq:/var/log/rabbitmq
+      - "rabbitmq_data:/var/lib/rabbitmq"
+      - "rabbitmq_log:/var/log/rabbitmq"
     restart: always
     networks:
       - stock-network
@@ -40,7 +40,9 @@ services:
     restart: always
     depends_on:
       - message-broker
-      - mongodb
+      - mongodb_1
+      - mongodb_2
+      - mongodb_3
     environment:
       - RABBITMQ_CONNECTION_URL=amqp://stockmarket:supersecret123@message-broker:5672/
       - MONGODB_URI=mongodb://stockmarket:supersecret123@mongodb:27017/
@@ -49,24 +51,81 @@ services:
     networks:
       - stock-network
 
-  # Create the MongoDB service
-  mongodb:
+  # Create the MongoDB_1 service
+  mongodb_1:
     image: mongo:latest
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
     ports:
-      - "27017:27017"
-    container_name: MongoDB
-    deploy:
-      mode: replicated
-      replicas: 3
+      - 27017:27017
     restart: always
+    healthcheck:
+      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'host.docker.internal:27017',priority:1},{_id:1,host:'host.docker.internal:27018',priority:0.5},{_id:2,host:'host.docker.internal:27019',priority:0.5}]}) }" | mongosh --port 27017 --quiet
+      interval: 5s
+      timeout: 30s
+      start_period: 0s
+      start_interval: 1s
+      retries: 30
     volumes:
-      - ./mongodb:/data/db
+      - "mongodb1_data:/data/db"
+      - "mongodb1_config:/data/configdb"
+    networks:
+      - stock-network
     environment:
       - MONGO_INITDB_ROOT_USERNAME=stockmarket
       - MONGO_INITDB_ROOT_PASSWORD=supersecret123
+
+  # Create the MongoDB_2 service
+  mongodb_2:
+    image: mongo:latest
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27018"]
+    ports:
+      - 27018:27018
+    restart: always
+    volumes:
+      - "mongodb2_data:/data/db"
+      - "mongodb2_config:/data/configdb"
+    networks:
+      - stock-network
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=stockmarket
+      - MONGO_INITDB_ROOT_PASSWORD=supersecret123
+
+  # Create the MongoDB_3 service
+  mongodb_3:
+    image: mongo:latest
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27019"]
+    ports:
+      - 27019:27019
+    restart: always
+    volumes:
+      - "mongodb3_data:/data/db"
+      - "mongodb3_config:/data/configdb"
+    networks:
+      - stock-network
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=stockmarket
+      - MONGO_INITDB_ROOT_PASSWORD=supersecret123
+
+  # Create the Frontend and Backend services
+  frontend:
+    container_name: frontend
+    build: ./stock-liveview
+    restart: always
+    ports:
+      - "3000:3000"
     networks:
       - stock-network
 
 networks:
   stock-network:
     driver: bridge
+
+volumes:
+  mongodb1_data:
+  mongodb2_data:
+  mongodb3_data:
+  mongodb1_config:
+  mongodb2_config:
+  mongodb3_config:
+  rabbitmq_data:
+  rabbitmq_log:
