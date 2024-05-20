@@ -4,17 +4,20 @@ FROM node:alpine
 # Create a new directory for the app
 RUN mkdir -p /usr/src/app/node_modules && chown -R node:node /usr/src/app
 
-# Set the working directory inside the container
-WORKDIR /usr/src/app
-
-# Copy the package.json and package-lock.json files to the container
-COPY package*.json ./
+# Install the latest version of npm
+RUN npm install -g npm@latest
 
 # Allow the container to run as a non-root user
 USER node
 
+# Set the working directory inside the container
+WORKDIR /usr/src/app
+
+# Copy the package.json and package-lock.json files to the container
+COPY --chown=node:node package*.json ./
+
 # Install the dependencies
-RUN npm install
+RUN npm install 
 
 # Copy the source code to the container
 COPY --chown=node:node . . 
@@ -29,4 +32,4 @@ ENV MONGODB_COLLECTION="stocks"
 ENV NODE_ENV="development"
 
 # Start the server when the container starts
-CMD ["node", "app.js"]
+CMD ["npm", "start"]
