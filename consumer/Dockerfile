@@ -30,7 +30,7 @@ COPY --from=builder /app/consumer .
 
 # Set environment variables
 ENV RABBITMQ_CONNECTION_URL=amqp://stockmarket:supersecret123@rabbitmq:5672/
-ENV MONGODB_URI=mongodb://admin:password@mongodb:27017/
+ENV MONGODB_URI=mongodb://stockmarket:supersecret123@mongodb:27017/
 ENV MONGODB_DATABASE=stockmarket
 ENV MONGODB_COLLECTION=stocks
 
