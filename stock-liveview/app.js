@@ -1,7 +1,7 @@
 const express = require("express");
 const http = require("http");
 const { initializeWebsocketServer } = require("./server/websocketserver");
-const { initializeMongoDB } = require("./server/database");
+const { main } = require("./server/database");
 
 // Create the express server
 const app = express();
@@ -19,7 +19,7 @@ app.get("/", (req, res) => {
 // Allowing top-level await
 (async function () {
   // Initialize the database
-  await initializeMongoDB();
+  await main().catch(console.error);
   // Initialize the websocket server
   initializeWebsocketServer(server);
   //start the web server
