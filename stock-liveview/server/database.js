@@ -3,8 +3,15 @@ const { MongoClient } = require("mongodb");
 let client;
 
 const main = async () => {
-  const uri = "mongodb://127.0.0.1:27017/";
-  client = new MongoClient(uri);
+  const uri =
+    "mongodb://stockmarket:supersecret123@mongodb:27017,mongodb:27018,mongodb:27019/?replicaSet=rs0";
+  client = new MongoClient(uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    maxPoolSize: 10,
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+  });
 
   try {
     console.log("Connecting to MongoDB");
