@@ -2,7 +2,7 @@ const { MongoClient } = require("mongodb");
 
 let client;
 
-const main = async () => {
+const initializeDatabase = async () => {
   const uri =
     "mongodb://stockmarket:supersecret123@mongodb:27017,mongodb:27018,mongodb:27019/?replicaSet=rs0";
   client = new MongoClient(uri, {
@@ -14,9 +14,9 @@ const main = async () => {
   });
 
   try {
-    console.log("Connecting to MongoDB");
+    console.log("Processing connection to MongoDB");
     await client.connect();
-    console.log("Connected to MongoDB");
+    console.log("Successfully connected to MongoDB");
     await listDatabases(client);
   } catch (error) {
     console.error(error);
@@ -33,4 +33,4 @@ const getMongoClient = () => {
   return client;
 };
 
-module.exports = { main, getMongoClient };
+module.exports = { initializeDatabase, getMongoClient };
