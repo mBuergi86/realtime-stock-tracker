@@ -41,6 +41,7 @@ func stockPublisher(url, queueName, stock string) {
 	}
 	defer channel.Close()
 
+	// match the queue name
 	_, err = channel.QueueDeclare(
 		"Stock Market",
 		false,
