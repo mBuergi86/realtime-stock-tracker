@@ -26,6 +26,7 @@ type StockEvent struct {
 	Price     float64 `json:"price"`
 }
 
+// StockConsumer consumes stock events from RabbitMQ and writes them to MongoDB
 func StockConsumer(url, queueName string, mongoClient *mongo.Client) {
 
 	conn, err := amqp.Dial(url)
@@ -62,6 +63,7 @@ func StockConsumer(url, queueName string, mongoClient *mongo.Client) {
 	go func() {
 
 		for d := range msgs {
+			// Process the message
 			log.Printf("Received a message: %s", d.Body)
 			var event StockEvent
 			err := json.Unmarshal(d.Body, &event)
@@ -110,12 +112,16 @@ func RoundToTwoDigits(num float64) float64 {
 
 func main() {
 	rabbitMQConnectionURL := getEnvWithDefault("RABBITMQ_CONNECTION_URL", "amqp://stockmarket:supersecret123@127.0.0.1:5672/")
-	mongoURI := getEnvWithDefault("MONGO_URI", "mongodb://mongodb:27017")
-	queueName := "Stock Market" // This should match the producer's queue name
+	mongoURI := getEnvWithDefault("MONGO_URI", "mongodb://mongodb:27017,mongodb:27018,mongodb:27019/?replicaSet=myReplicaSet")
+	cretentials := options.Credential{
+		Username: getEnvWithDefault("MONGO_USERNAME", "stockmarket"),
+		Password: getEnvWithDefault("MONGO_PASSWORD", "supersecret123"),
+	}
+	queueName := "Stock Market" // This should match the producer's queue name ☝️
 
 	wc := writeconcern.New(writeconcern.W(1))
 
-	clientOptions := options.Client().ApplyURI(mongoURI).SetWriteConcern(wc)
+	clientOptions := options.Client().ApplyURI(mongoURI).SetAuth(cretentials).SetWriteConcern(wc)
 	mongoClient, err := mongo.Connect(context.TODO(), clientOptions)
 	failOnError(err, "Failed to connect to MongoDB")
 
