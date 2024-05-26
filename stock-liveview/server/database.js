@@ -4,7 +4,7 @@ let client;
 
 const initializeDatabase = async () => {
   const uri =
-    "mongodb://mongodb:27017,mongodb:27018,mongodb:27019/?replicaSet=rs0";
+    "mongodb://mongodb1:27017,mongodb2:27018,mongodb3:27019/?replicaSet=rs0";
   client = new MongoClient(uri, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
