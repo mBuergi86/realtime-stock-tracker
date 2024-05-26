@@ -28,7 +28,7 @@ type StockEvent struct {
 	Price     float64 `json:"price"`
 }
 
-func stockPublisher(url, queueName, stock string) {
+func stockPublisher(url, stock string) {
 	conn, err := amqp.Dial(url)
 	if err != nil {
 		failOnError(err, "Failed to connect to RabbitMQ")
@@ -43,7 +43,7 @@ func stockPublisher(url, queueName, stock string) {
 
 	// match the queue name
 	_, err = channel.QueueDeclare(
-		"Stock Market",
+		stock,
 		false,
 		false,
 		false,
@@ -81,7 +81,7 @@ func stockPublisher(url, queueName, stock string) {
 		err = channel.PublishWithContext(
 			ctx,
 			"",
-			queueName,
+			stock,
 			false,
 			false,
 			amqp.Publishing{
@@ -111,7 +111,7 @@ func main() {
 	stocks := []string{"MSFT", "TSLA", "AAPL"}
 
 	for _, stock := range stocks {
-		go stockPublisher(rabbitMQConnectionURL, "Stock Market", stock)
+		go stockPublisher(rabbitMQConnectionURL, stock)
 	}
 
 	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
