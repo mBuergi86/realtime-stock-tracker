@@ -26,7 +26,7 @@ COPY --chown=node:node . .
 EXPOSE 3000
 
 # Set the environment variables
-ENV MONGODB_URL="mongodb://stockmarket:supersecret123@mongodb:27017,mongodb:27018,mongodb:27019/?replicaSet=myReplicaSet"
+ENV MONGODB_URL="mongodb://mongodb:27017,mongodb:27018,mongodb:27019/?replicaSet=rs0"
 ENV MONGODB_DB="stockmarket"
 ENV MONGODB_COLLECTION="stocks"
 ENV NODE_ENV="development"
