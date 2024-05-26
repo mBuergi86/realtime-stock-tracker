@@ -40,92 +40,136 @@ services:
     restart: always
     depends_on:
       - message-broker
-      - mongodb_1
-      - mongodb_2
-      - mongodb_3
+      - mongo1
+      - mongo2
+      - mongo3
     environment:
       - RABBITMQ_CONNECTION_URL=amqp://stockmarket:supersecret123@message-broker:5672/
-      - MONGODB_URI=mongodb://stockmarket:supersecret123@mongodb:27017/
+      - MONGODB_URI=mongodb://mongodb:27017,mongodb:27018,mongodb:27019/?replicaSet=rs0
       - MONGODB_DATABASE=stockmarket
       - MONGODB_COLLECTION=stocks
     networks:
       - stock-network
+      - mongoCluster
 
-  # Create the MongoDB_1 service
-  mongodb_1:
+  # Create the Mongo1 service
+  mongo1:
     image: mongo:latest
+    container_name: mongo1
     command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
     ports:
       - 27017:27017
-    restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     healthcheck:
-      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'host.docker.internal:27017',priority:1},{_id:1,host:'host.docker.internal:27018',priority:0.5},{_id:2,host:'host.docker.internal:27019',priority:0.5}]}) }" | mongosh --port 27017 --quiet
+      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'host.docker.internal:27017'}]}) }" | mongosh --port 27017 --quiet
       interval: 5s
       timeout: 30s
       start_period: 0s
       start_interval: 1s
       retries: 30
     volumes:
-      - "mongodb1_data:/data/db"
-      - "mongodb1_config:/data/configdb"
+      - "mongo1_data:/data/db"
+      - "mongo1_config:/data/configdb"
     networks:
-      - stock-network
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=stockmarket
-      - MONGO_INITDB_ROOT_PASSWORD=supersecret123
+      - mongoCluster
 
-  # Create the MongoDB_2 service
-  mongodb_2:
+  # Create the Mongo2 service
+  mongo2:
     image: mongo:latest
+    container_name: mongo2
     command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27018"]
     ports:
       - 27018:27018
-    restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
-      - "mongodb2_data:/data/db"
-      - "mongodb2_config:/data/configdb"
+      - "mongo2_data:/data/db"
+      - "mongo2_config:/data/configdb"
     networks:
-      - stock-network
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=stockmarket
-      - MONGO_INITDB_ROOT_PASSWORD=supersecret123
+      - mongoCluster
 
-  # Create the MongoDB_3 service
-  mongodb_3:
+  # Create the Mongo3 service
+  mongo3:
     image: mongo:latest
+    container_name: mongo3
     command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27019"]
     ports:
       - 27019:27019
-    restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
-      - "mongodb3_data:/data/db"
-      - "mongodb3_config:/data/configdb"
+      - "mongo3_data:/data/db"
+      - "mongo3_config:/data/configdb"
     networks:
-      - stock-network
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=stockmarket
-      - MONGO_INITDB_ROOT_PASSWORD=supersecret123
+      - mongoCluster
 
-  # Create the Frontend and Backend services
-  frontend:
-    container_name: frontend
+  # Create the Frontend services
+  frontend-1:
+    container_name: frontend-1
     build: ./stock-liveview
     restart: always
+    depends_on:
+      - mongo1
+      - mongo2
+      - mongo3
     ports:
       - "3000:3000"
     networks:
-      - stock-network
+      - mongoCluster
+
+  frontend-2:
+    container_name: frontend-2
+    build: ./stock-liveview
+    restart: always
+    depends_on:
+      - mongo1
+      - mongo2
+      - mongo3
+    ports:
+      - "3001:3000"
+    networks:
+      - mongoCluster
+
+  frontend-3:
+    container_name: frontend-3
+    build: ./stock-liveview
+    restart: always
+    depends_on:
+      - mongo1
+      - mongo2
+      - mongo3
+    ports:
+      - "3002:3000"
+    networks:
+      - mongoCluster
+
+  # Create the Nginx service
+  nginx:
+    container_name: nginx
+    build: ./nginx
+    restart: always
+    depends_on:
+      - frontend-1
+      - frontend-2
+      - frontend-3
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
 
 networks:
   stock-network:
     driver: bridge
+  mongoCluster:
+    driver: bridge
 
 volumes:
-  mongodb1_data:
-  mongodb2_data:
-  mongodb3_data:
-  mongodb1_config:
-  mongodb2_config:
-  mongodb3_config:
+  mongo1_data:
+  mongo1_config:
+  mongo2_data:
+  mongo2_config:
+  mongo3_data:
+  mongo3_config:
   rabbitmq_data:
   rabbitmq_log:
