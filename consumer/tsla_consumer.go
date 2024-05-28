@@ -112,7 +112,7 @@ func RoundToTwoDigits(num float64) float64 {
 
 func main() {
 	rabbitMQConnectionURL := getEnvWithDefault("RABBITMQ_CONNECTION_URL", "amqp://stockmarket:supersecret123@127.0.0.1:5672/")
-	mongoURI := getEnvWithDefault("MONGO_URI", "mongodb://127.0.0.1:27017/")
+	mongoURI := getEnvWithDefault("MONGO_URI", "mongodb://host.docker.internal:27017,host.docker.internal:27018,host.docker.internal:27019/?replicaSet=rs0")
 	// cretentials := options.Credential{
 	// 	Username: getEnvWithDefault("MONGO_USERNAME", "stockmarket"),
 	// 	Password: getEnvWithDefault("MONGO_PASSWORD", "supersecret123"),
