@@ -33,10 +33,11 @@ services:
     networks:
       - stock-network
 
-  # Create the Golang service for Consumer
-  consumer:
-    container_name: rmq-consumer
+  # Create the Golang service for AAPL Consumer
+  aapl_consumer:
+    container_name: aapl-consumer
     build: ./consumer
+    command: ["./aapl_consumer"]
     restart: always
     depends_on:
       - message-broker
@@ -45,7 +46,47 @@ services:
       - mongo3
     environment:
       - RABBITMQ_CONNECTION_URL=amqp://stockmarket:supersecret123@message-broker:5672/
-      - MONGODB_URI=mongodb://mongodb:27017,mongodb:27018,mongodb:27019/?replicaSet=rs0
+      - MONGODB_URI=mongodb://host.docker.internal:27017,host.docker.internal:27018,host.docker.internal:27019/?replicaSet=rs0
+      - MONGODB_DATABASE=stockmarket
+      - MONGODB_COLLECTION=stocks
+    networks:
+      - stock-network
+      - mongoCluster
+
+  # Create the Golang service for MSFT Consumer
+  msft_consumer:
+    container_name: msft-consumer
+    build: ./consumer
+    command: ["./msft_consumer"]
+    restart: always
+    depends_on:
+      - message-broker
+      - mongo1
+      - mongo2
+      - mongo3
+    environment:
+      - RABBITMQ_CONNECTION_URL=amqp://stockmarket:supersecret123@message-broker:5672/
+      - MONGODB_URI=mongodb://host.docker.internal:27017,host.docker.internal:27018,host.docker.internal:27019/?replicaSet=rs0
+      - MONGODB_DATABASE=stockmarket
+      - MONGODB_COLLECTION=stocks
+    networks:
+      - stock-network
+      - mongoCluster
+
+  # Create the Golang service for TSLA Consumer
+  tsla_consumer:
+    container_name: tsla-consumer
+    build: ./consumer
+    command: ["./tsla_consumer"]
+    restart: always
+    depends_on:
+      - message-broker
+      - mongo1
+      - mongo2
+      - mongo3
+    environment:
+      - RABBITMQ_CONNECTION_URL=amqp://stockmarket:supersecret123@message-broker:5672/
+      - MONGODB_URI=mongodb://host.docker.internal:27017,host.docker.internal:27018,host.docker.internal:27019/?replicaSet=rs0
       - MONGODB_DATABASE=stockmarket
       - MONGODB_COLLECTION=stocks
     networks:
@@ -62,11 +103,10 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
-      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'host.docker.internal:27017'}]}) }" | mongosh --port 27017 --quiet
-      interval: 5s
+      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'host.docker.internal:27017', priority:1}, {_id:1,host:'host.docker.internal:27018', priority:0.5}, {_id:2,host:'host.docker.internal:27019', priority:0.5}]}) }" | mongosh --port 27017 --quiet
+      interval: 10s
       timeout: 30s
-      start_period: 0s
-      start_interval: 1s
+      start_period: 30s
       retries: 30
     volumes:
       - "mongo1_data:/data/db"
