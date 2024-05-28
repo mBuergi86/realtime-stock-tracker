@@ -186,6 +186,7 @@ services:
 
   # Create the Nginx service
   nginx:
+    image: nginx:latest
     container_name: nginx
     build: ./nginx
     restart: always
@@ -197,6 +198,8 @@ services:
       - "8080:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    networks:
+      - mongoCluster
 
 networks:
   stock-network:
