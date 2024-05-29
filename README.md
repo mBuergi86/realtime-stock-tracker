@@ -43,14 +43,14 @@ MongoDB is used to store stock price data consumed by the stock consumer service
 
 The frontend service displays live stock prices in a web interface.
 
-### NGINX
-
-NGINX is configured as a load balancer to distribute traffic between multiple frontend instances.
-
 #### Key Features:
 
 - Displays real-time stock prices.
 - Uses Tailwind CSS for styling.
+  
+### NGINX
+
+NGINX is configured as a load balancer to distribute traffic between multiple frontend instances.
 
 ## Getting Started
 
