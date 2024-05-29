@@ -26,7 +26,7 @@ COPY --chown=node:node . .
 EXPOSE 3000
 
 # Set the environment variables
-ENV MONGODB_URL="mongodb://mongodb:27017,mongodb:27018,mongodb:27019/?replicaSet=rs0"
+ENV MONGODB_URL="mongodb:/host.docker.internal:27017,host.docker.internal:27018,host.docker.internal:27019/?replicaSet=rs0"
 ENV MONGODB_DB="stockmarket"
 ENV MONGODB_COLLECTION="stocks"
 ENV NODE_ENV="development"
