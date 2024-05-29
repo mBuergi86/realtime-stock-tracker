@@ -11,6 +11,7 @@ This project is a real-time stock tracking system that integrates multiple servi
 3. **RabbitMQ**
 4. **MongoDB**
 5. **Stock Live View (Frontend & Backend)**
+6. **NGINX**
 
 ### Stock Publisher
 
@@ -41,6 +42,10 @@ MongoDB is used to store stock price data consumed by the stock consumer service
 ### Stock Live View (Frontend & Backend)
 
 The frontend service displays live stock prices in a web interface.
+
+### NGINX
+
+NGINX is configured as a load balancer to distribute traffic between multiple frontend instances.
 
 #### Key Features:
 
@@ -79,8 +84,8 @@ The frontend service displays live stock prices in a web interface.
 
 - The stock publisher and consumer services will start automatically with Docker Compose.
 - Access the RabbitMQ management interface at `http://localhost:15672`.
-- Access the MongoDB instance at `mongodb://localhost:27017`.
-- The frontend can be accessed at `http://localhost:3000`.
+- Access the MongoDB instance at `mongodb://host.docker.internal:27017`.
+- The frontend can be accessed at `http://localhost`.
 
 ## Contributing
 
