@@ -61,7 +61,7 @@ func stockPublisher(url, stock string) {
 	src := rand.NewSource(time.Now().UnixNano() + int64(stock[0]) + int64(os.Getpid()))
 	localRand := rand.New(src)
 
-	tickerIntervaleValue := getEnvWithDefault("TICKER_INTERVAL", "1")
+	tickerIntervaleValue := getEnvWithDefault("TICKER_INTERVAL", "1000")
 	tickerInterval, err := strconv.Atoi(tickerIntervaleValue)
 	failOnError(err, "Failed to parse ticker interval")
 
