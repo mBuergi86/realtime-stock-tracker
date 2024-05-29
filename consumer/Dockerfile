@@ -34,7 +34,7 @@ COPY --from=builder /app/tsla_consumer .
 
 # Set environment variables (common for all)
 ENV RABBITMQ_CONNECTION_URL=amqp://stockmarket:supersecret123@rabbitmq:5672/
-ENV MONGODB_URI=mongodb://mongodb:27017,mongodb:27018,mongodb:27019/?replicaSet=rs0
+ENV MONGODB_URI=mongodb://host.docker.internal:27017,host.docker.internal:27018,host.docker.internal:27019/?replicaSet=rs0
 # ENV MONGODB_USER=stockmarket
 # ENV MONGODB_PASSWORD=supersecret123
 ENV MONGODB_DATABASE=stockmarket
