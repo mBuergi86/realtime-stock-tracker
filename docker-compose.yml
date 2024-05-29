@@ -1,7 +1,7 @@
 services:
   # Create the RabbitMQ service
   message-broker:
-    image: rabbitmq:3-management-alpine
+    image: rabbitmq:management-alpine
     container_name: message-broker
     ports:
       - "5672:5672"
@@ -30,6 +30,7 @@ services:
       - message-broker
     environment:
       - RABBITMQ_CONNECTION_URL=amqp://stockmarket:supersecret123@message-broker:5672/
+      - TICKER_INTERVAL=100
     networks:
       - stock-network
 
@@ -144,60 +145,34 @@ services:
     networks:
       - mongoCluster
 
-  # Create the Frontend services
-  frontend-1:
-    container_name: frontend-1
+  # Create the Frontend services with 3 replicas
+  frontend:
     build: ./stock-liveview
     restart: always
     depends_on:
       - mongo1
       - mongo2
       - mongo3
-    ports:
-      - "3000:3000"
-    networks:
-      - mongoCluster
-
-  frontend-2:
-    container_name: frontend-2
-    build: ./stock-liveview
-    restart: always
-    depends_on:
-      - mongo1
-      - mongo2
-      - mongo3
-    ports:
-      - "3001:3000"
-    networks:
-      - mongoCluster
-
-  frontend-3:
-    container_name: frontend-3
-    build: ./stock-liveview
-    restart: always
-    depends_on:
-      - mongo1
-      - mongo2
-      - mongo3
-    ports:
-      - "3002:3000"
+    environment:
+      - PORT=3000
+    deploy:
+      replicas: 3
     networks:
       - mongoCluster
 
   # Create the Nginx service
   nginx:
-    image: nginx:latest
+    image: nginx:stable-alpine
     container_name: nginx
     build: ./nginx
     restart: always
     depends_on:
-      - frontend-1
-      - frontend-2
-      - frontend-3
+      - frontend
     ports:
-      - "8080:80"
+      - "80:80"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    command: ["nginx", "-g", "daemon off;"]
     networks:
       - mongoCluster
 
