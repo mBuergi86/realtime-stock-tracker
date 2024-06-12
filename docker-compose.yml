@@ -98,6 +98,7 @@ services:
   mongo1:
     image: mongo:latest
     container_name: mongo1
+    restart: always
     command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
     ports:
       - 27017:27017
@@ -119,6 +120,7 @@ services:
   mongo2:
     image: mongo:latest
     container_name: mongo2
+    restart: always
     command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27018"]
     ports:
       - 27018:27018
@@ -134,6 +136,7 @@ services:
   mongo3:
     image: mongo:latest
     container_name: mongo3
+    restart: always
     command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27019"]
     ports:
       - 27019:27019
